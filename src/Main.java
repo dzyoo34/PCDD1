@@ -8,7 +8,7 @@ class Th1 extends Thread {
     }
 
     public void run() {
-        System.out.println(getName() + " начал работу (поиск с начала)");
+        System.out.println(getName() + " начало");
         int i = 0;
 
 
@@ -22,10 +22,10 @@ class Th1 extends Thread {
                         int suma = pos1 + pos2;
 
 
-                        System.out.println(getName() + ": Позиция1=" + pos1 +
-                                ", Позиция2=" + pos2 +
-                                ", Сумма позиций=" + suma +
-                                ", Значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
+                        System.out.println(getName() + ": позиция1=" + pos1 +
+                                ", позиция2=" + pos2 +
+                                ", сумма позиций=" + suma +
+                                ", значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
                         break;
                     }
                     i++;
@@ -34,7 +34,7 @@ class Th1 extends Thread {
             i++;
         }
 
-        System.out.println(getName() + " завершил работу");
+        System.out.println(getName() + " конец");
     }
 }
 
@@ -47,7 +47,7 @@ class Th2 extends Thread {
     }
 
     public void run() {
-        System.out.println(getName() + " начал работу (поиск с конца)");
+        System.out.println(getName() + " начало");
 
         int i = mas.length - 1;
 
@@ -61,10 +61,10 @@ class Th2 extends Thread {
                         int suma = pos1 + pos2;
 
 
-                        System.out.println(getName() + ": Позиция1=" + pos1 +
-                                ", Позиция2=" + pos2 +
-                                ", Сумма позиций=" + suma +
-                                ", Значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
+                        System.out.println(getName() + ": позиция1=" + pos1 +
+                                ", позиция2=" + pos2 +
+                                ", сумма позиций=" + suma +
+                                ", значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
                         break;
                     }
                     i--;
@@ -73,7 +73,7 @@ class Th2 extends Thread {
             i--;
         }
 
-        System.out.println(getName() + " завершил работу");
+        System.out.println(getName() + " конец");
     }
 }
 
@@ -84,7 +84,7 @@ public class Main {
         System.out.println("Массив данных:");
         for(int i = 0; i < 100; i++) {
             mas[i] = (int)(Math.random() * 100) + 1;
-            System.out.print(mas[i] + " ");
+            System.out.printf("%3d ", mas[i]);
 
             if((i + 1) % 20 == 0) {
                 System.out.println();
