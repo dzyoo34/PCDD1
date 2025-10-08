@@ -1,79 +1,98 @@
-import java.util.*;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.util.Random;
+
 
 class Th1 extends Thread {
-    private int[] mas;
+    private final int[] arr;
+ 
+    private final int start;
+    private final int end;
+    private final int step = 1; 
 
-    public Th1(int[] mas) {
-        this.mas = mas;
+   
+    public Th1(int[] arr) {
+        this.arr = arr;
+        this.start = 0; 
+        this.end = arr.length; 
     }
 
+    
+    @Override
     public void run() {
-        System.out.println(getName() + " начало");
-        int i = 0;
+        int pos1 = -1; 
 
+       
+        for (int i = start; i < end; i += step) {
 
-        while(i < mas.length) {
-            if(mas[i] % 2 == 0) {
-                int pos1 = i;
-                i++;
-                while(i < mas.length) {
-                    if(mas[i] % 2 == 0) {
-                        int pos2 = i;
-                        int suma = pos1 + pos2;
+          
+            if (arr[i] % 2 != 0) {
+                if (pos1 == -1) {
+                    
+                    pos1 = i;
+                } else {
+                   
+                    int pos2 = i;
+                    int sumOfPositions = pos1 + pos2;
 
+                   
+                    System.out.printf("%s %d %d %d %d %d%n",
+                            getName(),
+                            pos1, pos2,
+                            sumOfPositions,
+                            arr[pos1], arr[pos2]);
 
-                        System.out.println(getName() + ": позиция1=" + pos1 +
-                                ", позиция2=" + pos2 +
-                                ", сумма позиций=" + suma +
-                                ", значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
-                        break;
-                    }
-                    i++;
+                   
+                    pos1 = -1;
                 }
             }
-            i++;
         }
-
-        System.out.println(getName() + " конец");
     }
 }
 
+
+
 class Th2 extends Thread {
-    private int[] mas;
+    private final int[] arr;
+    private final int start;
+    private final int end = -1; 
+    private final int step = -1; 
 
-
-    public Th2(int[] mas) {
-        this.mas = mas;
+    
+    public Th2(int[] arr) {
+        this.arr = arr;
+        this.start = arr.length - 1; 
     }
 
+    
+    @Override
     public void run() {
-        System.out.println(getName() + " начало");
+        int pos1 = -1; 
 
-        int i = mas.length - 1;
+       
+        for (int i = start; i > end; i += step) { 
 
-        while(i >= 0) {
-            if(mas[i] % 2 == 0) {
-                int pos1 = i;
-                i--;
-                while(i >= 0) {
-                    if(mas[i] % 2 == 0) {
-                        int pos2 = i;
-                        int suma = pos1 + pos2;
+           
+            if (arr[i] % 2 != 0) {
+                if (pos1 == -1) {
+                   
+                    pos1 = i;
+                } else {
+                  
+                    int pos2 = i;
+                    int sumOfPositions = pos1 + pos2;
 
+                    
+                    System.out.printf("%s %d %d %d %d %d%n",
+                            getName(),
+                            pos1, pos2,
+                            sumOfPositions,
+                            arr[pos1], arr[pos2]);
 
-                        System.out.println(getName() + ": позиция1=" + pos1 +
-                                ", позиция2=" + pos2 +
-                                ", сумма позиций=" + suma +
-                                ", значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
-                        break;
-                    }
-                    i--;
+                    pos1 = -1;
                 }
             }
-            i--;
         }
-
-        System.out.println(getName() + " конец");
     }
 }
 
@@ -84,7 +103,7 @@ public class Main {
         System.out.println("Массив данных:");
         for(int i = 0; i < 100; i++) {
             mas[i] = (int)(Math.random() * 100) + 1;
-            System.out.printf("%3d ", mas[i]);
+            System.out.print(mas[i] + " ");
 
             if((i + 1) % 20 == 0) {
                 System.out.println();
