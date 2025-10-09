@@ -1,6 +1,5 @@
 import java.util.*;
 
-// Класс для первого потока - через интерфейс Runnable
 class Th1 implements Runnable {
     private int[] mas;
     private String name;
