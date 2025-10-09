@@ -1,98 +1,79 @@
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
-import java.util.Random;
+import java.util.*;
 
+class Th1 implements Runnable {
+    private int[] mas;
+    private String name;
 
-class Th1 extends Thread {
-    private final int[] arr;
- 
-    private final int start;
-    private final int end;
-    private final int step = 1; 
-
-   
-    public Th1(int[] arr) {
-        this.arr = arr;
-        this.start = 0; 
-        this.end = arr.length; 
+    public Th1(int[] mas, String name) {
+        this.mas = mas;
+        this.name = name;
     }
 
-    
-    @Override
     public void run() {
-        int pos1 = -1; 
+        System.out.println(name + " начало");
+        int i = 0;
 
-       
-        for (int i = start; i < end; i += step) {
+        while(i < mas.length) {
+            if(mas[i] % 2 == 0) {
+                int pos1 = i;
+                i++;
+                while(i < mas.length) {
+                    if(mas[i] % 2 == 0) {
+                        int pos2 = i;
+                        int suma = pos1 + pos2;
 
-          
-            if (arr[i] % 2 != 0) {
-                if (pos1 == -1) {
-                    
-                    pos1 = i;
-                } else {
-                   
-                    int pos2 = i;
-                    int sumOfPositions = pos1 + pos2;
-
-                   
-                    System.out.printf("%s %d %d %d %d %d%n",
-                            getName(),
-                            pos1, pos2,
-                            sumOfPositions,
-                            arr[pos1], arr[pos2]);
-
-                   
-                    pos1 = -1;
+                        System.out.println(name + ": позиция1=" + pos1 +
+                                ", позиция2=" + pos2 +
+                                ", сумма позиций=" + suma +
+                                ", значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
+                        break;
+                    }
+                    i++;
                 }
             }
+            i++;
         }
+
+        System.out.println(name + " конец");
     }
 }
 
+class Th2 implements Runnable {
+    private int[] mas;
+    private String name;
 
-
-class Th2 extends Thread {
-    private final int[] arr;
-    private final int start;
-    private final int end = -1; 
-    private final int step = -1; 
-
-    
-    public Th2(int[] arr) {
-        this.arr = arr;
-        this.start = arr.length - 1; 
+    public Th2(int[] mas, String name) {
+        this.mas = mas;
+        this.name = name;
     }
 
-    
-    @Override
     public void run() {
-        int pos1 = -1; 
+        System.out.println(name + " начало");
 
-       
-        for (int i = start; i > end; i += step) { 
+        int i = mas.length - 1;
 
-           
-            if (arr[i] % 2 != 0) {
-                if (pos1 == -1) {
-                   
-                    pos1 = i;
-                } else {
-                  
-                    int pos2 = i;
-                    int sumOfPositions = pos1 + pos2;
+        while(i >= 0) {
+            if(mas[i] % 2 == 0) {
+                int pos1 = i;
+                i--;
+                while(i >= 0) {
+                    if(mas[i] % 2 == 0) {
+                        int pos2 = i;
+                        int suma = pos1 + pos2;
 
-                    
-                    System.out.printf("%s %d %d %d %d %d%n",
-                            getName(),
-                            pos1, pos2,
-                            sumOfPositions,
-                            arr[pos1], arr[pos2]);
-
-                    pos1 = -1;
+                        System.out.println(name + ": позиция1=" + pos1 +
+                                ", позиция2=" + pos2 +
+                                ", сумма позиций=" + suma +
+                                ", значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
+                        break;
+                    }
+                    i--;
                 }
             }
+            i--;
         }
+
+        System.out.println(name + " конец");
     }
 }
 
@@ -103,19 +84,19 @@ public class Main {
         System.out.println("Массив данных:");
         for(int i = 0; i < 100; i++) {
             mas[i] = (int)(Math.random() * 100) + 1;
-            System.out.print(mas[i] + " ");
+            System.out.printf("%3d ", mas[i]);
 
             if((i + 1) % 20 == 0) {
                 System.out.println();
             }
         }
         System.out.println("\n");
+        
+        Th1 runnable1 = new Th1(mas, "Поток-1");
+        Th2 runnable2 = new Th2(mas, "Поток-2");
 
-        Th1 thread1 = new Th1(mas);
-        Th2 thread2 = new Th2(mas);
-
-        thread1.setName("Поток-1");
-        thread2.setName("Поток-2");
+        Thread thread1 = new Thread(runnable1);
+        Thread thread2 = new Thread(runnable2);
 
         thread1.start();
         thread2.start();
@@ -128,7 +109,7 @@ public class Main {
         }
 
         System.out.println("\n========================================");
-        String info = "Лабораторная работа выполнена студентами группы:Степанович Никита и Згурский Дмитрий";
+        String info = "Лабораторная работа выполнена студентами группы: Степанович Никита и Згурский Дмитрий";
         for(int i = 0; i < info.length(); i++) {
             System.out.print(info.charAt(i));
             try {
