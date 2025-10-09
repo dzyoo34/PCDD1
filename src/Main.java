@@ -1,8 +1,13 @@
-import java.util.*;
+import java.io.PrintStream;
+import java.io.UnsupportedEncodingException;
+import java.util.Random;
+
+
+
 
 class Th1 implements Runnable {
-    private int[] mas;
-    private String name;
+    private final int[] mas;
+    private final String name;
 
     public Th1(int[] mas, String name) {
         this.mas = mas;
@@ -11,36 +16,35 @@ class Th1 implements Runnable {
 
     public void run() {
         System.out.println(name + " начало");
-        int i = 0;
+        int pos1 = -1; 
+        for (int i = 0; i < mas.length; i++) {
+            
+            if (mas[i] % 2 != 0) {
+                if (pos1 == -1) {
+                    pos1 = i;
+                } else {
+                    int pos2 = i;
+                    int suma = pos1 + pos2;
 
-        while(i < mas.length) {
-            if(mas[i] % 2 == 0) {
-                int pos1 = i;
-                i++;
-                while(i < mas.length) {
-                    if(mas[i] % 2 == 0) {
-                        int pos2 = i;
-                        int suma = pos1 + pos2;
+                    System.out.printf("%s: позиция1=%d, позиция2=%d, сумма позиций=%d, значения: [%d, %d]%n",
+                            name,
+                            pos1, pos2,
+                            suma,
+                            mas[pos1], mas[pos2]);
 
-                        System.out.println(name + ": позиция1=" + pos1 +
-                                ", позиция2=" + pos2 +
-                                ", сумма позиций=" + suma +
-                                ", значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
-                        break;
-                    }
-                    i++;
+                    pos1 = -1;
                 }
             }
-            i++;
         }
-
+        
         System.out.println(name + " конец");
     }
 }
 
+
 class Th2 implements Runnable {
-    private int[] mas;
-    private String name;
+    private final int[] mas;
+    private final String name;
 
     public Th2(int[] mas, String name) {
         this.mas = mas;
@@ -49,33 +53,32 @@ class Th2 implements Runnable {
 
     public void run() {
         System.out.println(name + " начало");
+        int pos1 = -1; 
 
-        int i = mas.length - 1;
+        for (int i = mas.length - 1; i >= 0; i--) {
+            
+            if (mas[i] % 2 != 0) {
+                if (pos1 == -1) {
+                    pos1 = i;
+                } else {
+                    int pos2 = i;
+                    int suma = pos1 + pos2;
+                    
+                    System.out.printf("%s: позиция1=%d, позиция2=%d, сумма позиций=%d, значения: [%d, %d]%n",
+                            name,
+                            pos2, pos1,
+                            suma,
+                            mas[pos2], mas[pos1]);
 
-        while(i >= 0) {
-            if(mas[i] % 2 == 0) {
-                int pos1 = i;
-                i--;
-                while(i >= 0) {
-                    if(mas[i] % 2 == 0) {
-                        int pos2 = i;
-                        int suma = pos1 + pos2;
-
-                        System.out.println(name + ": позиция1=" + pos1 +
-                                ", позиция2=" + pos2 +
-                                ", сумма позиций=" + suma +
-                                ", значения: [" + mas[pos1] + ", " + mas[pos2] + "]");
-                        break;
-                    }
-                    i--;
+                    pos1 = -1;
                 }
             }
-            i--;
         }
-
+        
         System.out.println(name + " конец");
     }
 }
+
 
 public class Main {
     public static void main(String[] args) {
