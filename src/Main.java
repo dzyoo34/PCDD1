@@ -15,7 +15,6 @@ class Th1 implements Runnable {
     }
 
     public void run() {
-        System.out.println(name + " начало");
         int pos1 = -1; 
         for (int i = 0; i < mas.length; i++) {
             
@@ -26,7 +25,7 @@ class Th1 implements Runnable {
                     int pos2 = i;
                     int suma = pos1 + pos2;
 
-                    System.out.printf("%s: позиция1=%d, позиция2=%d, сумма позиций=%d, значения: [%d, %d]%n",
+                    System.out.printf("%s: %d, %d, %d, %d, %d %n",
                             name,
                             pos1, pos2,
                             suma,
@@ -37,7 +36,6 @@ class Th1 implements Runnable {
             }
         }
         
-        System.out.println(name + " конец");
     }
 }
 
@@ -52,7 +50,6 @@ class Th2 implements Runnable {
     }
 
     public void run() {
-        System.out.println(name + " начало");
         int pos1 = -1; 
 
         for (int i = mas.length - 1; i >= 0; i--) {
@@ -64,7 +61,7 @@ class Th2 implements Runnable {
                     int pos2 = i;
                     int suma = pos1 + pos2;
                     
-                    System.out.printf("%s: позиция1=%d, позиция2=%d, сумма позиций=%d, значения: [%d, %d]%n",
+                    System.out.printf("%s: %d, %d, %d, %d, %d %n",
                             name,
                             pos2, pos1,
                             suma,
@@ -75,7 +72,6 @@ class Th2 implements Runnable {
             }
         }
         
-        System.out.println(name + " конец");
     }
 }
 
