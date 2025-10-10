@@ -10,7 +10,6 @@ class Th1 implements Runnable {
     }
 
     public void run() {
-        System.out.println(name + " начало");
         int i = 0;
 
         while(i < mas.length) {
@@ -34,7 +33,6 @@ class Th1 implements Runnable {
             i++;
         }
 
-        System.out.println(name + " конец");
     }
 }
 
@@ -48,7 +46,7 @@ class Th2 implements Runnable {
     }
 
     public void run() {
-        System.out.println(name + " начало");
+
 
         int i = mas.length - 1;
 
@@ -72,8 +70,6 @@ class Th2 implements Runnable {
             }
             i--;
         }
-
-        System.out.println(name + " конец");
     }
 }
 
@@ -104,6 +100,7 @@ public class Main {
         try {
             thread1.join();
             thread2.join();
+
         } catch(InterruptedException e) {
             System.out.println("Ошибка при ожидании потоков");
         }
