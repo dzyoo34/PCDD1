@@ -50,6 +50,9 @@ public class Main {
                         "    Th: Th3_G3, pri=5\n";
 
         System.out.println(structure);
+        G1.setMaxPriority(5);
+        System.out.println("Максимальный приоритет\n" +
+                "G1.setMaxPriority(5). Thc (pri 8) -> effective pri 5.");
 
         try {
             Tha.join(10); Thb.join(10); Thc.join(10); Thd.join(10); ThA.join(10);
