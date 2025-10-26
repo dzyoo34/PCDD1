@@ -56,16 +56,6 @@ public class Main {
         Th1.start();
         Th2.start();
 
-        Tha.join();
-        Thb.join();
-        Thc.join();
-        Thd.join();
-        ThA.join();
-        Th1_g3.join();
-        Th2_g3.join();
-        Th3_g3.join();
-        Th1.join();
-        Th2.join();
 
         main.list();
         System.out.println("Total active threads is " + main.activeCount());
