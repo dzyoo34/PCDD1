@@ -1,6 +1,8 @@
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Random;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main {
     private static final int PRODUCER_COUNT = 3;
@@ -14,6 +16,8 @@ public class Main {
     private static final AtomicInteger totalProduced = new AtomicInteger(0);
     private static final AtomicInteger totalConsumed = new AtomicInteger(0);
     private static final ConcurrentHashMap<Integer, AtomicInteger> consumerCounters = new ConcurrentHashMap<>();
+
+    private static final Object LOCK = new Object();
 
     public static void main(String[] args) {
         ExecutorService executor = Executors.newFixedThreadPool(PRODUCER_COUNT + CONSUMER_COUNT);
@@ -55,53 +59,51 @@ public class Main {
         public void run() {
             try {
                 while (totalProduced.get() < TOTAL_OBJECTS) {
-     int chislo1 = nechetnyeChisla[random.nextInt(nechetnyeChisla.length)];
-      int chislo2 = nechetnyeChisla[random.nextInt(nechetnyeChisla.length)];
-        if (totalProduced.get() >= TOTAL_OBJECTS) {
-            break;
-                    }
+                    int chislo1 = nechetnyeChisla[random.nextInt(nechetnyeChisla.length)];
+                    int chislo2 = nechetnyeChisla[random.nextInt(nechetnyeChisla.length)];
 
-        if (sklad.remainingCapacity() == 0) {
-        System.out.println("Производитель №" + id + " ждет. Склад полон!");
-                    }
-               sklad.put(chislo1);
-                 int produced1 = totalProduced.incrementAndGet();
-
-                  if (produced1 > TOTAL_OBJECTS) {
-                        sklad.take();
-                        totalProduced.decrementAndGet();
+                    if (!produceItem(chislo1)) {
                         break;
                     }
 
-              System.out.println("Производитель №" + id + " поместил на склад: " + chislo1);
-             pokazatSklad();
-
-            if (totalProduced.get() >= TOTAL_OBJECTS) {
-             break;
-                    }
-
-             if (sklad.remainingCapacity() == 0) {
-              System.out.println("Производитель №" + id + " ждет. Склад полон!");
-                    }
-                    sklad.put(chislo2);
-                    int produced2 = totalProduced.incrementAndGet();
-
-                if (produced2 > TOTAL_OBJECTS) {
-              sklad.take();
-          totalProduced.decrementAndGet();
-              break;
-                    }
-            System.out.println("Производитель №" + id + " поместил на склад: " + chislo2);
-           pokazatSklad();
-
-              Thread.sleep(random.nextInt(100));
-
-                if (produced2 >= TOTAL_OBJECTS) {
+                    if (!produceItem(chislo2)) {
                         break;
                     }
+
+                    Thread.sleep(random.nextInt(100));
                 }
-             } catch (InterruptedException e) {
-               Thread.currentThread().interrupt();
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+
+        private boolean produceItem(int chislo) throws InterruptedException {
+            synchronized (LOCK) {
+                if (totalProduced.get() >= TOTAL_OBJECTS) {
+                    return false;
+                }
+
+                while (sklad.size() >= BUFFER_CAPACITY) {
+                    System.out.println("Производитель №" + id + " ждет. Склад полон!");
+                    LOCK.wait();
+                }
+
+                sklad.offer(chislo);
+                int produced = totalProduced.incrementAndGet();
+
+                // Проверяем, не превысили ли лимит
+                if (produced > TOTAL_OBJECTS) {
+                    sklad.poll();
+                    totalProduced.decrementAndGet();
+                    return false;
+                }
+
+                System.out.println("Производитель №" + id + " поместил на склад: " + chislo);
+                pokazatSklad();
+
+                LOCK.notifyAll();
+
+                return true;
             }
         }
     }
@@ -118,22 +120,32 @@ public class Main {
         public void run() {
             try {
                 while (consumerCounters.get(id).get() < CONSUMER_GOAL) {
-                    if (sklad.isEmpty()) {
-                        System.out.println("Потребитель №" + id + " ждет. Склад пуст!");
+                    synchronized (LOCK) {
+                        // Проверяем, есть ли товары
+                        while (sklad.isEmpty()) {
+                            System.out.println("Потребитель №" + id + " ждет. Склад пуст!");
+                            LOCK.wait();
+                        }
+
+                        // Берем товар
+                        Integer tovar = sklad.poll();
+                        if (tovar != null) {
+                            consumerCounters.get(id).incrementAndGet();
+                            totalConsumed.incrementAndGet();
+
+                            System.out.println("Потребитель №" + id + " взял со склада: " + tovar);
+                            pokazatSklad();
+
+                            LOCK.notifyAll();
+                        }
                     }
-
-                    int tovar = sklad.take();
-
-                    consumerCounters.get(id).incrementAndGet();
-                    totalConsumed.incrementAndGet();
-
-                    System.out.println("Потребитель №" + id + " взял со склада: " + tovar);
-                    pokazatSklad();
 
                     Thread.sleep(random.nextInt(100));
                 }
 
-                System.out.println("Потребитель №" + id + " взял " + CONSUMER_GOAL + " числа. Поток завершен");
+                synchronized (LOCK) {
+                    System.out.println(" Потребитель №" + id + " завершил работу (взял " + CONSUMER_GOAL + " товара)");
+                }
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
@@ -141,10 +153,12 @@ public class Main {
         }
     }
 
-    private static synchronized void pokazatSklad() {
+    // Вызывается только внутри synchronized(LOCK)
+    private static void pokazatSklad() {
         if (sklad.size() != 0) {
             System.out.print("На складе имеется " + sklad.size() + " единиц -> ");
-            for (int tovar : sklad) {
+            List<Integer> skladCopy = new ArrayList<>(sklad);
+            for (int tovar : skladCopy) {
                 System.out.print(tovar + " ");
             }
             System.out.println();
