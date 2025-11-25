@@ -1,29 +1,25 @@
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Random;
-import java.util.concurrent.*;
 
-
+// ---------------- PRODUCER ----------------
 class Producer implements Runnable {
 
     private final String name;
     private final BlockingQueue<Integer> queue;
     private final int batchSize;
     private final AtomicInteger activeConsumers;
-    private final AtomicInteger consumedTotal;
-    private final int totalNeeded;
     private final Random random = new Random();
 
     public Producer(String name, BlockingQueue<Integer> queue,
-                    int batchSize, AtomicInteger activeConsumers,
-                    AtomicInteger consumedTotal, int totalNeeded) {
-
+                    int batchSize, AtomicInteger activeConsumers) {
         this.name = name;
         this.queue = queue;
         this.batchSize = batchSize;
         this.activeConsumers = activeConsumers;
-        this.consumedTotal = consumedTotal;
-        this.totalNeeded = totalNeeded;
     }
 
     private int generateOdd() {
@@ -33,13 +29,12 @@ class Producer implements Runnable {
 
     public void run() {
         try {
-            while (activeConsumers.get() > 0 && consumedTotal.get() < totalNeeded) {
-
+            // Работать пока есть потребители
+            while (activeConsumers.get() > 0) {
                 for (int i = 0; i < batchSize; i++) {
-
-                    if (activeConsumers.get() == 0 ||
-                            consumedTotal.get() >= totalNeeded) {
-                        System.out.println(name + " stopping — no more needed.");
+                    // Перед каждой единицей проверяем, не исчезли ли потребители
+                    if (activeConsumers.get() == 0) {
+                        System.out.println(name + " stopping — no more consumers.");
                         return;
                     }
 
@@ -49,15 +44,22 @@ class Producer implements Runnable {
                         System.out.println(name + ": Depot FULL! Waiting...");
                     }
 
-                    queue.put(item);
+                    queue.put(item); // блокируется, если нет места
                     System.out.println(name + " produced: " + item +
                             " | stock: " + queue.size());
+                }
+                // Небольшая пауза, чтобы лог не сыпал слишком быстро
+                try { Thread.sleep(50); } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                    return;
                 }
             }
 
             System.out.println(name + " FINISHED.");
 
-        } catch (InterruptedException ignored) {
+        } catch (InterruptedException e) {
+            // корректно завершаем при прерывании
+            Thread.currentThread().interrupt();
         }
     }
 }
@@ -82,7 +84,6 @@ class Consumer implements Runnable {
         this.monitor = monitor;
         this.consumedTotal = consumedTotal;
     }
-
     public void run() {
         int taken = 0;
 
@@ -93,7 +94,7 @@ class Consumer implements Runnable {
                     System.out.println(name + ": Depot is EMPTY! Waiting...");
                 }
 
-                Integer item = queue.take();
+                Integer item = queue.take(); // блокируется, если пусто
                 taken++;
                 consumedTotal.incrementAndGet();
 
@@ -103,8 +104,8 @@ class Consumer implements Runnable {
 
             System.out.println(name + " satisfied and leaving.");
 
-        } catch (InterruptedException ignored) {
-
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         } finally {
             int left = activeConsumers.decrementAndGet();
             System.out.println(name + " left. Remaining consumers: " + left);
@@ -117,7 +118,6 @@ class Consumer implements Runnable {
         }
     }
 }
-
 
 public class Main {
     public static void main(String[] args) {
@@ -135,14 +135,12 @@ public class Main {
         AtomicInteger activeConsumers = new AtomicInteger(Y);
         Object monitor = new Object();
 
-
-        int totalNeeded = Y * Z;
         AtomicInteger consumedTotal = new AtomicInteger(0);
+
 
         // RUN PRODUCERS
         for (int i = 0; i < X; i++) {
-            executor.submit(new Producer("Producer-" + (i + 1), depot, F,
-                    activeConsumers, consumedTotal, totalNeeded));
+            executor.submit(new Producer("Producer-" + (i + 1), depot, F, activeConsumers));
         }
 
         // RUN CONSUMERS
@@ -157,12 +155,15 @@ public class Main {
                 try {
                     monitor.wait();
                 } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
+                    Thread.currentThread().interrupt();
+                    break;
                 }
             }
         }
 
         System.out.println("\n--- All consumers finished. Stopping producers... ---");
         executor.shutdownNow();
+
+        System.out.println("Всего потреблено: " + consumedTotal.get());
     }
 }
