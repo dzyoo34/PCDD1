@@ -5,7 +5,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.Random;
 
-// ---------------- PRODUCER ----------------
 class Producer implements Runnable {
 
     private final String name;
@@ -29,7 +28,6 @@ class Producer implements Runnable {
 
     public void run() {
         try {
-            // Работать пока есть потребители
             while (activeConsumers.get() > 0) {
                 for (int i = 0; i < batchSize; i++) {
                     // Перед каждой единицей проверяем, не исчезли ли потребители
@@ -44,7 +42,7 @@ class Producer implements Runnable {
                         System.out.println(name + ": Depot FULL! Waiting...");
                     }
 
-                    queue.put(item); // блокируется, если нет места
+                    queue.put(item);
                     System.out.println(name + " produced: " + item +
                             " | stock: " + queue.size());
                 }
@@ -58,7 +56,6 @@ class Producer implements Runnable {
             System.out.println(name + " FINISHED.");
 
         } catch (InterruptedException e) {
-            // корректно завершаем при прерывании
             Thread.currentThread().interrupt();
         }
     }
@@ -105,7 +102,7 @@ class Consumer implements Runnable {
             System.out.println(name + " satisfied and leaving.");
 
         } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
+            e.printStackTrace();
         } finally {
             int left = activeConsumers.decrementAndGet();
             System.out.println(name + " left. Remaining consumers: " + left);
@@ -155,7 +152,7 @@ public class Main {
                 try {
                     monitor.wait();
                 } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
+                    e.printStackTrace();
                     break;
                 }
             }
