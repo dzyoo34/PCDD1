@@ -1,5 +1,4 @@
 import java.util.ArrayList;
-import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -9,14 +8,12 @@ class Store{
     ArrayList<Integer> stockList = new ArrayList<>();
 
     ReentrantLock lock = new ReentrantLock();
-    Condition notFull = lock.newCondition();
     AtomicInteger[] eaten = new AtomicInteger[] {
             new AtomicInteger(0),
             new AtomicInteger(0),
             new AtomicInteger(0),
             new AtomicInteger(0)
     };
-    Condition notEmpty = lock.newCondition();
 
     private volatile int consumeralive = 0;
     volatile int totalProduced = 0;
@@ -33,10 +30,6 @@ class Store{
         lock.lock();
         try {
             consumeralive--;
-            if (consumeralive == 0) {
-                notEmpty.signalAll();
-                notFull.signalAll();
-            }
         } finally { lock.unlock(); }
     }
 
@@ -49,73 +42,88 @@ class Store{
     }
 
     public void put(String str, int... values) {
-        lock.lock();
-        try {
-            for (int v : values) {
-                if (totalProduced >= TARGET) {
-                    notEmpty.signalAll();
+        for (int v : values) {
+            if (totalProduced >= TARGET) {
+                return;
+            }
+
+            while (true) {
+                lock.lock();
+                try {
+                    if (stockList.size() < 5 && totalProduced < TARGET && consumeralive > 0) {
+                        stockList.add(v);
+                        totalProduced++;
+                        System.out.println(str + " поместил: " + v + " -> " + stockList + " (всего: " + totalProduced + ")");
+
+                        if (stockList.size() == 5) {
+                            System.out.println(">>> Склад заполнен!");
+                        }
+                        break;
+                    }
+                } finally {
+                    lock.unlock();
+                }
+
+                if (consumeralive == 0 || totalProduced >= TARGET) {
                     return;
                 }
 
-                while (stockList.size() == 5) {
-                    notFull.await();
+                try {
+                    Thread.sleep(10);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
-
-                if (consumeralive == 0) return;
-
-                stockList.add(v);
-                totalProduced++;
-                System.out.println(str + " поместил: " + v + " -> " + stockList + " (всего: " + totalProduced + ")");
-
-                if (stockList.size() == 5) {
-                    System.out.println(">>> Склад заполнен!");
-                }
-
-                notEmpty.signalAll();
             }
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            lock.unlock();
         }
     }
 
     public void get(String str, int consumerIndex) {
-        lock.lock();
-        try {
-            while (stockList.isEmpty() && consumeralive > 0 && totalProduced < TARGET) {
-                notEmpty.await();
+        while (true) {
+            lock.lock();
+            try {
+                if (!stockList.isEmpty()) {
+                    int available = stockList.size();
+                    int toTake = 1 + (int)(Math.random() * available);
+
+                    int consumed = 0;
+                    for (int i = 0; i < toTake && !stockList.isEmpty(); i++) {
+                        int val = stockList.remove(stockList.size() - 1);
+                        consumed++;
+                        eaten[consumerIndex].incrementAndGet();
+                        System.out.println(str + " взял число " + val);
+                    }
+
+                    System.out.println("--- " + str + " взял " + consumed + " элементов (осталось на складе: " + stockList.size() + ")");
+
+                    if (stockList.isEmpty()) {
+                        System.out.println("<<< Склад пуст!");
+                    }
+                    break;
+                }
+            } finally {
+                lock.unlock();
             }
 
-            if (consumeralive == 0 && stockList.isEmpty()) return;
-            if (stockList.isEmpty() && totalProduced >= TARGET) return;
-
-            // Берём случайное количество элементов (от 1 до всех доступных)
-            int available = stockList.size();
-            int toTake = 1 + (int)(Math.random() * available);
-
-            int consumed = 0;
-            for (int i = 0; i < toTake && !stockList.isEmpty(); i++) {
-                int val = stockList.remove(stockList.size() - 1);
-                consumed++;
-                eaten[consumerIndex].incrementAndGet();
-                System.out.println(str + " взял число " + val);
+            if (totalProduced >= TARGET) {
+                lock.lock();
+                try {
+                    if (stockList.isEmpty()) {
+                        return;
+                    }
+                } finally {
+                    lock.unlock();
+                }
             }
 
-            System.out.println("--- " + str + " взял " + consumed + " элементов (осталось на складе: " + stockList.size() + ")");
-
-            if (stockList.isEmpty()) {
-                System.out.println("<<< Склад пуст!");
+            if (consumeralive == 0) {
+                return;
             }
 
-            notFull.signalAll();
-            notEmpty.signalAll();
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        } finally {
-            lock.unlock();
+            try {
+                Thread.sleep(10);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
         }
     }
 }
@@ -169,7 +177,7 @@ class Consumer implements Runnable{
             }
 
             try {
-                Thread.sleep(100); // Небольшая задержка
+                Thread.sleep(100);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -211,6 +219,6 @@ public class Main {
             total += count;
         }
         System.out.println();
-        System.out.println("Всего съедено: " + total + " ");
+        System.out.println("Всего съедено: " + total );
     }
 }
